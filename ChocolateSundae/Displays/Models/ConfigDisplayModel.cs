@@ -1,0 +1,91 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Media;
+
+namespace ChocolateSundae.Displays.Models
+{
+    public class ConfigDisplayModel : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        private string _username = "";
+        public string Username
+        {
+            get { return _username; }
+            set
+            {
+                _username = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _password = "";
+        public string Password
+        {
+            get { return _password; }
+            set
+            {
+                _password = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _status = "";
+        public string Status
+        {
+            get { return _status; }
+            set
+            {
+                _status = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private Brush _statusColor = Brushes.Black;
+        public Brush StatusColor
+        {
+            get { return _statusColor; }
+            set
+            {
+                _statusColor = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public void SetStatusInfo(string message)
+        {
+            Status = message;
+            StatusColor = Brushes.DarkGray;
+        }
+
+        public void SetStatusSuccess(string message)
+        {
+            Status = message;
+            StatusColor = Brushes.Green;
+        }
+
+        public void SetStatusError(string message)
+        {
+            Status = message;
+            StatusColor = Brushes.Red;
+        }
+
+        public void ResetStatus()
+        {
+            Status = "";
+            StatusColor = Brushes.Black;
+        }
+
+        // Create the OnPropertyChanged method to raise the event
+        // The calling member's name will be used as the parameter.
+        protected void OnPropertyChanged([CallerMemberName] string? name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+    }
+}
