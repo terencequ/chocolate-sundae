@@ -13,10 +13,12 @@ namespace ChocolateSundae.Displays.Models
     {
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        #region Username
+
         private string _username = "";
         public string Username
         {
-            get { return _username; }
+            get => _username;
             set
             {
                 _username = value;
@@ -24,10 +26,14 @@ namespace ChocolateSundae.Displays.Models
             }
         }
 
+        #endregion
+
+        #region Password
+
         private string _password = "";
         public string Password
         {
-            get { return _password; }
+            get => _password;
             set
             {
                 _password = value;
@@ -35,10 +41,14 @@ namespace ChocolateSundae.Displays.Models
             }
         }
 
+        #endregion
+
+        #region Status
+
         private string _status = "";
         public string Status
         {
-            get { return _status; }
+            get => _status;
             set
             {
                 _status = value;
@@ -49,7 +59,7 @@ namespace ChocolateSundae.Displays.Models
         private Brush _statusColor = Brushes.Black;
         public Brush StatusColor
         {
-            get { return _statusColor; }
+            get => _statusColor;
             set
             {
                 _statusColor = value;
@@ -81,8 +91,8 @@ namespace ChocolateSundae.Displays.Models
             StatusColor = Brushes.Black;
         }
 
-        // Create the OnPropertyChanged method to raise the event
-        // The calling member's name will be used as the parameter.
+        #endregion
+
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

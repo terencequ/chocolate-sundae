@@ -1,13 +1,9 @@
-﻿using ChocolateSundae.Services.Config.Models;
-using System;
+﻿using System;
 using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Text.Json;
+using ChocolateSundae.Config.Models;
 
-namespace ChocolateSundae.Services
+namespace ChocolateSundae.Config
 {
     public static class ConfigHelper
     {

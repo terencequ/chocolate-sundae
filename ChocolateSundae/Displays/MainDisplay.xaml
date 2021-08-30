@@ -6,6 +6,69 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid Background="#FFFFDEDE">
-
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="80px"/>
+                <RowDefinition/>
+                <RowDefinition Height="80px"/>
+            </Grid.RowDefinitions>
+            <!--Title-->
+            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10,0,0,0" Text="Dashboard" FontFamily="Segoe UI Semibold" FontSize="24"/>
+            <!--Main-->
+            <Grid Grid.Row="1" Margin="10,0,10,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <!--Left column, logs-->
+                <Grid Grid.Column="0" Margin="0,0,5,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="25px"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock>Logs</TextBlock>
+                    <ScrollViewer x:Name="LogScrollViewer" Grid.Row="1">
+                        <TextBox Background="White"
+                             Text="{Binding LogContents, Mode=TwoWay}"
+                             IsReadOnly="True"
+                             TextWrapping="Wrap"/>
+                    </ScrollViewer>
+                </Grid>
+                <!--Right column, user selection-->
+                <Grid Grid.Column="1" Margin="5,0,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="25px"/>
+                        <RowDefinition Height="1.5*"/>
+                        <RowDefinition Height="30px"/>
+                        <RowDefinition Height="0.5*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Center">Users to analyse</TextBlock>
+                    <ScrollViewer Grid.Row="1">
+                        <ListBox x:Name="UserListBox" ItemsSource="{Binding Users}" SelectionChanged="OnUserListBoxSelection">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding}"></TextBlock>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </ScrollViewer>
+                    <Grid Grid.Row="2" Height="25">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="0.25*"/>
+                            <ColumnDefinition Width="0.25*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Margin="0,0,5,0" Text="{Binding UserInput, Mode=TwoWay}"></TextBox>
+                        <Button Grid.Column="1" Click="OnAddUser">Add</Button>
+                        <Button Grid.Column="2" Click="OnRemoveUser">Remove</Button>
+                    </Grid>
+                    <TextBlock Grid.Row="3" FontSize="14" Text="{Binding SelectedUserText, Mode=TwoWay}">Selected user: qu.terence</TextBlock>
+                </Grid>
+            </Grid>
+            <!--Action bar-->
+            <Button Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" Width="192" Height="25" Click="OnDownloadUserInfo">Download selected user's info</Button>
+        </Grid>
     </Grid>
 </UserControl>

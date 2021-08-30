@@ -1,12 +1,12 @@
 ﻿using ChocolateSundae.Displays.Models;
 using ChocolateSundae.Services;
-using ChocolateSundae.Services.Config.Models;
-
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using ChocolateSundae.Config;
+using ChocolateSundae.Config.Models;
 
 namespace ChocolateSundae.Displays
 {
