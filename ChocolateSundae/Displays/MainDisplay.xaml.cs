@@ -63,7 +63,7 @@ namespace ChocolateSundae.Displays
             {
                 try
                 {
-                    result = await instagramService.GetUserProfileOrDefaultAsync(username);
+                    result = (await instagramService.GetUserData(username)).ToString();
                 }
                 catch (InstagramErrorException e)
                 {

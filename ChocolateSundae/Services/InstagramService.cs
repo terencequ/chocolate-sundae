@@ -14,6 +14,8 @@ using ChocolateSundae.Config;
 using System.Net.Http;
 using InstagramApiSharp.Enums;
 using ChocolateSundae.Services.Exceptions;
+using ChocolateSundae.Services.Models;
+using InstagramApiSharp;
 
 namespace ChocolateSundae.Services
 {
@@ -86,13 +88,24 @@ namespace ChocolateSundae.Services
             return InstaApi?.IsUserAuthenticated ?? false;
         }
 
-        public async Task<string> GetUserProfileOrDefaultAsync(string username)
+        public async Task<UserData> GetUserData(string username)
         {
-            var currentUserRequest = await InstaApi!.UserProcessor.GetUserInfoByUsernameAsync(username);
-            var info = currentUserRequest.Succeeded 
-                ? currentUserRequest.Value
-                : throw new InstagramErrorException(GetErrorMessageFromResultInfo(currentUserRequest.Info));
-            return "User profile download success.";
+            var userInfoRequest = await InstaApi!.UserProcessor.GetUserInfoByUsernameAsync(username);
+            var instaUserInfo = userInfoRequest.Succeeded 
+                ? userInfoRequest.Value
+                : throw new InstagramErrorException(GetErrorMessageFromResultInfo(userInfoRequest.Info));
+
+            var userMediaRequest = await InstaApi!.UserProcessor.GetUserMediaAsync(username, PaginationParameters.MaxPagesToLoad(1000));
+            var instaUserMediaInfo = userMediaRequest.Succeeded
+                ? userMediaRequest.Value
+                : throw new InstagramErrorException(GetErrorMessageFromResultInfo(userMediaRequest.Info));
+
+            var userFullRequest = await InstaApi!.UserProcessor.GetFullUserInfoAsync(instaUserInfo.Pk);
+            var instaUserFullInfo = userFullRequest.Succeeded
+                ? userFullRequest.Value
+                : throw new InstagramErrorException(GetErrorMessageFromResultInfo(userFullRequest.Info));
+
+            return UserData.CreateFromInstaUserInfo(instaUserInfo, instaUserMediaInfo, instaUserFullInfo);
         }
 
         private string GetErrorMessageFromResultInfo(ResultInfo requestInfo)
