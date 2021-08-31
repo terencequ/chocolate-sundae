@@ -4,6 +4,7 @@ using ChocolateSundae.Services.Abstractions;
 using ChocolateSundae.Services.Exceptions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -17,6 +18,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using ChocolateSundae.Services.Models;
+using Path = System.IO.Path;
 
 namespace ChocolateSundae.Displays
 {
@@ -26,7 +29,8 @@ namespace ChocolateSundae.Displays
     public partial class MainDisplay : UserControl
     {
         private MainDisplayModel model;
-        private IInstagramService? instagramService;
+        private IInstagramService? _instagramService;
+        private ISpreadsheetService? _spreadsheetService;
 
         public MainDisplay()
         {
@@ -35,7 +39,7 @@ namespace ChocolateSundae.Displays
             DataContext = model;
         }
 
-        private async void OnDownloadUserInfo(object sender, RoutedEventArgs e)
+        private async void OnDownloadSelectedUserInfo(object sender, RoutedEventArgs e)
         {
             var result = "";
             if(UserListBox.SelectedIndex == -1)
@@ -44,39 +48,82 @@ namespace ChocolateSundae.Displays
                 model.AddLog(result);
             } else
             {
-                result = await GetUserProfile(UserListBox.SelectedItem?.ToString() ?? "");
+                var username = UserListBox.SelectedItem?.ToString() ?? "";
+                model.AddLog($"Getting user information for {username}...");
+                DownloadSelectedUserButton.IsEnabled = false;
+                DownloadAllUsersButton.IsEnabled = false;
+                result = await GetAndDownloadUserProfiles(UserListBox.SelectedItem?.ToString() ?? "");
                 model.AddLog(result);
             }
 
             LogScrollViewer.ScrollToBottom();
+            DownloadSelectedUserButton.IsEnabled = true;
+            DownloadAllUsersButton.IsEnabled = true;
         }
 
-        internal async Task<string> GetUserProfile(string username)
+        private async void OnDownloadAllUsersInfo(object sender, RoutedEventArgs e)
         {
             var result = "";
-            instagramService = new InstagramService();
-            await instagramService.TryAuthenticateAsync();
-            if (!instagramService.IsAuthenticated())
+            if(!UserListBox.HasItems)
             {
-                result = "Failed to authenticate.\n";
+                result = "No user was selected! Please select a user.";
+                model.AddLog(result);
             } else
             {
-                try
-                {
-                    result = (await instagramService.GetUserData(username)).ToString();
-                }
-                catch (InstagramErrorException e)
-                {
-                    result = e.Message;
-                }
+                var usernames = UserListBox.Items.OfType<string>().ToArray();
+                model.AddLog($"Getting user information for all {usernames.Length} users...");
+                DownloadSelectedUserButton.IsEnabled = false;
+                DownloadAllUsersButton.IsEnabled = false;
+                result = await GetAndDownloadUserProfiles(usernames);
+                model.AddLog(result);
             }
-            return $"Getting user information for {username}:\n{result}";
+
+            LogScrollViewer.ScrollToBottom();
+            DownloadSelectedUserButton.IsEnabled = true;
+            DownloadAllUsersButton.IsEnabled = true;
+        }
+        
+        private async Task<string> GetAndDownloadUserProfiles(params string[] usernames)
+        {
+            _instagramService = new InstagramService();
+            _spreadsheetService = new SpreadsheetService();
+            await _instagramService.TryAuthenticateAsync();
+            if (!_instagramService.IsAuthenticated())
+            {
+                return "Failed to authenticate.\n";
+            }
+            
+            try
+            {
+                // Get and write user data
+                var userDataList = new List<UserData>();
+                foreach (var username in usernames)
+                {
+                    var userData = await _instagramService.GetUserData(username);
+                    if (userData != null)
+                    {
+                        userDataList.Add(userData);
+                    }
+                }
+                await new SpreadsheetService().WriteUserDataToCsvAsync(userDataList.ToArray());
+                
+                // Open newly created file
+                var path = Path.GetFullPath($"{SpreadsheetService.OutputPath}.csv");
+                Process.Start("explorer.exe", path);
+                
+                return $"Wrote information for {userDataList.Count}/{usernames.Length} users to {SpreadsheetService.OutputPath}.csv.";
+            }
+            catch (Exception e)
+            {
+                return e.Message;
+            }
         }
 
         private void OnAddUser(object sender, RoutedEventArgs e)
         {
             model.AddUser();
             UserListBox.SelectedIndex = UserListBox.Items.Count - 1;
+            model.UserInput = "";
         }
 
         private void OnRemoveUser(object sender, RoutedEventArgs e)

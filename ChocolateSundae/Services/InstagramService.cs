@@ -88,24 +88,34 @@ namespace ChocolateSundae.Services
             return InstaApi?.IsUserAuthenticated ?? false;
         }
 
-        public async Task<UserData> GetUserData(string username)
+        public async Task<UserData?> GetUserData(string username)
         {
-            var userInfoRequest = await InstaApi!.UserProcessor.GetUserInfoByUsernameAsync(username);
-            var instaUserInfo = userInfoRequest.Succeeded 
-                ? userInfoRequest.Value
-                : throw new InstagramErrorException(GetErrorMessageFromResultInfo(userInfoRequest.Info));
+            try
+            {
+                var userInfoRequest = await InstaApi!.UserProcessor.GetUserInfoByUsernameAsync(username);
+                var instaUserInfo = userInfoRequest.Succeeded
+                    ? userInfoRequest.Value
+                    : throw new InstagramErrorException(GetErrorMessageFromResultInfo(userInfoRequest.Info));
 
-            var userMediaRequest = await InstaApi!.UserProcessor.GetUserMediaAsync(username, PaginationParameters.MaxPagesToLoad(1000));
-            var instaUserMediaInfo = userMediaRequest.Succeeded
-                ? userMediaRequest.Value
-                : throw new InstagramErrorException(GetErrorMessageFromResultInfo(userMediaRequest.Info));
+                var userMediaRequest =
+                    await InstaApi!.UserProcessor.GetUserMediaAsync(username,
+                        PaginationParameters.MaxPagesToLoad(1000));
+                var instaUserMediaInfo = userMediaRequest.Succeeded
+                    ? userMediaRequest.Value
+                    : throw new InstagramErrorException(GetErrorMessageFromResultInfo(userMediaRequest.Info));
 
-            var userFullRequest = await InstaApi!.UserProcessor.GetFullUserInfoAsync(instaUserInfo.Pk);
-            var instaUserFullInfo = userFullRequest.Succeeded
-                ? userFullRequest.Value
-                : throw new InstagramErrorException(GetErrorMessageFromResultInfo(userFullRequest.Info));
+                var userFullRequest = await InstaApi!.UserProcessor.GetFullUserInfoAsync(instaUserInfo.Pk);
+                var instaUserFullInfo = userFullRequest.Succeeded
+                    ? userFullRequest.Value
+                    : throw new InstagramErrorException(GetErrorMessageFromResultInfo(userFullRequest.Info));
 
-            return UserData.CreateFromInstaUserInfo(instaUserInfo, instaUserMediaInfo, instaUserFullInfo);
+                return UserData.CreateFromInstaUserInfo(instaUserInfo, instaUserMediaInfo, instaUserFullInfo);
+            }
+            catch
+            {
+                return null;
+            }
+
         }
 
         private string GetErrorMessageFromResultInfo(ResultInfo requestInfo)

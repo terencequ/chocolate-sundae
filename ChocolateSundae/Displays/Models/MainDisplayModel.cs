@@ -67,7 +67,7 @@ namespace ChocolateSundae.Displays.Models
 
         public void AddUser()
         {
-            if(UserInput != "")
+            if(!string.IsNullOrWhiteSpace(UserInput))
             {
                 Users.Add(UserInput);
             }
