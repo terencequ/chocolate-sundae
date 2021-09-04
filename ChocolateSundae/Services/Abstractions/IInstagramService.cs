@@ -14,6 +14,6 @@ namespace ChocolateSundae.Services.Abstractions
 
         bool IsAuthenticated();
 
-        Task<UserData?> GetUserData(string username);
+        Task<UserData?> GetUserData(string username, IProgress<UserDataProgress> progress);
     }
 }

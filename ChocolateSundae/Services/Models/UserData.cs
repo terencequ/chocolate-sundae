@@ -30,9 +30,6 @@ namespace ChocolateSundae.Services.Models
         public int LikeCountRecentPost3 { get; set; }
         public int CommentCountInMostRecentPost { get; set; }
         public string? TagsInMostRecentPost { get; set; }
-
-        // Reels
-        public int TotalReels { get; set; }
         
         // IGTVs
         public int TotalIGTVCount { get; set; }
@@ -62,9 +59,6 @@ namespace ChocolateSundae.Services.Models
             data.CommentCountInMostRecentPost = commentCount;
             data.TagsInMostRecentPost = string.Join(",", GetHashtagsFromText(media.FirstOrDefault()?.Caption?.Text));
 
-            // Reels
-            data.TotalReels = mediaInfo.Count(m => m.ProductType == "clips");
-            
             // Stories
             data.AvailableStories = fullInfo.UserStory.Reel.Items.Count;
             

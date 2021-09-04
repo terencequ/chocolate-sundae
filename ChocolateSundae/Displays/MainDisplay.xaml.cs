@@ -39,6 +39,9 @@ namespace ChocolateSundae.Displays
             DataContext = model;
         }
 
+        /// <summary>
+        /// Download selected user's information into a spreadsheet.
+        /// </summary>
         private async void OnDownloadSelectedUserInfo(object sender, RoutedEventArgs e)
         {
             var result = "";
@@ -52,7 +55,7 @@ namespace ChocolateSundae.Displays
                 model.AddLog($"Getting user information for {username}...");
                 DownloadSelectedUserButton.IsEnabled = false;
                 DownloadAllUsersButton.IsEnabled = false;
-                result = await GetAndDownloadUserProfiles(UserListBox.SelectedItem?.ToString() ?? "");
+                result = await GetAndDownloadUserProfiles(new Progress<UserDataProgress>(UpdateProgress), UserListBox.SelectedItem?.ToString() ?? "");
                 model.AddLog(result);
             }
 
@@ -61,6 +64,9 @@ namespace ChocolateSundae.Displays
             DownloadAllUsersButton.IsEnabled = true;
         }
 
+        /// <summary>
+        /// Download all user information into a spreadsheet.
+        /// </summary>
         private async void OnDownloadAllUsersInfo(object sender, RoutedEventArgs e)
         {
             var result = "";
@@ -74,7 +80,7 @@ namespace ChocolateSundae.Displays
                 model.AddLog($"Getting user information for all {usernames.Length} users...");
                 DownloadSelectedUserButton.IsEnabled = false;
                 DownloadAllUsersButton.IsEnabled = false;
-                result = await GetAndDownloadUserProfiles(usernames);
+                result = await GetAndDownloadUserProfiles(new Progress<UserDataProgress>(UpdateProgress), usernames);
                 model.AddLog(result);
             }
 
@@ -82,8 +88,16 @@ namespace ChocolateSundae.Displays
             DownloadSelectedUserButton.IsEnabled = true;
             DownloadAllUsersButton.IsEnabled = true;
         }
+
+        private async void UpdateProgress(UserDataProgress progress)
+        {
+            model.AddLog($"Progress:\n" +
+                         $"Get basic user information: {progress.LoadBasicUserInfo}\n" +
+                         $"Get full user information: {progress.LoadFullUserInfo}\n" +
+                         $"Get user media: {progress.LoadUserMediaCount}, obtained {progress.LoadUserMediaCount} media\n");
+        }
         
-        private async Task<string> GetAndDownloadUserProfiles(params string[] usernames)
+        private async Task<string> GetAndDownloadUserProfiles(IProgress<UserDataProgress> progress, params string[] usernames)
         {
             _instagramService = new InstagramService();
             _spreadsheetService = new SpreadsheetService();
@@ -99,7 +113,7 @@ namespace ChocolateSundae.Displays
                 var userDataList = new List<UserData>();
                 foreach (var username in usernames)
                 {
-                    var userData = await _instagramService.GetUserData(username);
+                    var userData = await _instagramService.GetUserData(username, progress);
                     if (userData != null)
                     {
                         userDataList.Add(userData);

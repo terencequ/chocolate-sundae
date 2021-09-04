@@ -47,6 +47,7 @@ namespace ChocolateSundae.Services
             InstaApi = InstaApiBuilder.CreateBuilder()
                 .SetUser(userSession)
                 .UseLogger(new DebugLogger(LogLevel.All))
+                .SetRequestDelay(RequestDelay.FromSeconds(1, 2))
                 .Build();
             InstaApi.SetApiVersion(InstaApiVersionType.Version180);
 
@@ -88,43 +89,74 @@ namespace ChocolateSundae.Services
             return InstaApi?.IsUserAuthenticated ?? false;
         }
 
-        public async Task<UserData?> GetUserData(string username)
+        public async Task<UserData?> GetUserData(string username, IProgress<UserDataProgress> progress)
         {
-            try
+            var progressInstance = new UserDataProgress();
+            // Load basic user info
+            progressInstance.LoadBasicUserInfo = RequestStatus.Started;
+            progress.Report(progressInstance);
+            var userInfoRequest = await InstaApi!.UserProcessor.GetUserInfoByUsernameAsync(username);
+            var instaUserInfo = userInfoRequest.Succeeded
+                ? userInfoRequest.Value
+                : null;
+            if (instaUserInfo != null)
             {
-                var userInfoRequest = await InstaApi!.UserProcessor.GetUserInfoByUsernameAsync(username);
-                var instaUserInfo = userInfoRequest.Succeeded
-                    ? userInfoRequest.Value
-                    : throw new InstagramErrorException(GetErrorMessageFromResultInfo(userInfoRequest.Info));
-
-                var userMediaRequest =
-                    await InstaApi!.UserProcessor.GetUserMediaAsync(username,
-                        PaginationParameters.MaxPagesToLoad(1000));
-                var instaUserMediaInfo = userMediaRequest.Succeeded
-                    ? userMediaRequest.Value
-                    : throw new InstagramErrorException(GetErrorMessageFromResultInfo(userMediaRequest.Info));
-
-                var userFullRequest = await InstaApi!.UserProcessor.GetFullUserInfoAsync(instaUserInfo.Pk);
-                var instaUserFullInfo = userFullRequest.Succeeded
-                    ? userFullRequest.Value
-                    : throw new InstagramErrorException(GetErrorMessageFromResultInfo(userFullRequest.Info));
-
-                return UserData.CreateFromInstaUserInfo(instaUserInfo, instaUserMediaInfo, instaUserFullInfo);
+                progressInstance.LoadBasicUserInfo = RequestStatus.Succeeded;
             }
-            catch
+            else
             {
+                progressInstance.LoadBasicUserInfo = RequestStatus.Failed;
+                progressInstance.LoadBasicUserInfoError = GetErrorMessageFromResultInfo(userInfoRequest.Info);
                 return null;
             }
-
+            progress.Report(progressInstance);
+            
+            // Load full user info
+            progressInstance.LoadFullUserInfo = RequestStatus.Started;
+            progress.Report(progressInstance);
+            var userFullRequest = await InstaApi!.UserProcessor.GetFullUserInfoAsync(instaUserInfo.Pk);
+            var instaUserFullInfo = userFullRequest.Succeeded
+                ? userFullRequest.Value
+                : null;
+            if (instaUserFullInfo != null)
+            {
+                progressInstance.LoadFullUserInfo = RequestStatus.Succeeded;
+            }
+            else
+            {
+                progressInstance.LoadFullUserInfo = RequestStatus.Failed;
+                progressInstance.LoadFullUserInfoError = GetErrorMessageFromResultInfo(userFullRequest.Info);
+                return null;
+            }
+            progress.Report(progressInstance);
+            
+            // Load user media
+            progressInstance.LoadUserMedia = RequestStatus.Started;
+            progress.Report(progressInstance);
+            var userMediaRequest =
+                await InstaApi!.UserProcessor.GetUserMediaAsync(username,
+                    PaginationParameters.MaxPagesToLoad(10));
+            var instaUserMediaInfo = userMediaRequest.Succeeded
+                ? userMediaRequest.Value
+                : null;
+            if (instaUserMediaInfo != null)
+            {
+                progressInstance.LoadUserMedia = RequestStatus.Succeeded;
+                progressInstance.LoadUserMediaCount = instaUserMediaInfo.Count;
+            }
+            else
+            {
+                progressInstance.LoadUserMedia = RequestStatus.Failed;
+                progressInstance.LoadUserMediaError = GetErrorMessageFromResultInfo(userMediaRequest.Info);
+                return null;
+            }
+            progress.Report(progressInstance);
+            
+            return UserData.CreateFromInstaUserInfo(instaUserInfo, instaUserMediaInfo, instaUserFullInfo);
         }
 
         private string GetErrorMessageFromResultInfo(ResultInfo requestInfo)
         {
-            if(requestInfo == null)
-            {
-                return "";
-            }
-
             var message = "";
             if (requestInfo.Message != null)
             {
